@@ -12,8 +12,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from backend.agents.cognition_store import CognitionStore, CycleRecord
-from backend.core.affinity_predictor import AffinityPredictor
-from backend.core.fingerprint_encoder import FingerprintEncoder
+from backend.core import AffinityPredictor, FingerprintEncoder
 
 logger = logging.getLogger(__name__)
 

@@ -24,9 +24,8 @@ from backend.agents.analyzer import AnalyzerAgent
 from backend.agents.cognition_store import CognitionStore
 from backend.agents.engineer import EngineerAgent
 from backend.agents.researcher import ResearcherAgent
-from backend.core.affinity_predictor import AffinityPredictor
-from backend.core.fingerprint_encoder import FingerprintEncoder
-from backend.core import settings
+from backend.config import settings
+from backend.core import AffinityPredictor, FingerprintEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class LoopScheduler:
             store_path: Path for saving/loading the cognition store.
         """
         self.running = False
-        self.store_path = store_path or settings.COGNITION_STORE_PATH
+        self.store_path = store_path or str(settings.data_dir / "cognition_store.json")
         self.cycle_count = 0
         self.last_cycle_time: Optional[datetime] = None
         self.next_cycle_time: Optional[datetime] = None
@@ -79,12 +78,12 @@ class LoopScheduler:
 
         # Initialize encoder (shared dependency)
         self.encoder = FingerprintEncoder(
-            fp_size=settings.FP_SIZE,
-            radius=settings.FP_RADIUS,
+            radius=settings.fingerprint_radius,
+            n_bits=settings.fingerprint_nbits,
         )
 
         # Initialize predictor (shared dependency)
-        self.predictor = AffinityPredictor(fp_size=settings.FP_SIZE)
+        self.predictor = AffinityPredictor()
 
         # Initialize agents
         self.researcher = researcher or ResearcherAgent(self.cognition_store)
@@ -106,8 +105,8 @@ class LoopScheduler:
             A fresh CognitionStore instance.
         """
         return CognitionStore(
-            target_chembl_id=settings.DEFAULT_TARGET_CHEMBL_ID,
-            target_name=settings.DEFAULT_TARGET_NAME,
+            target_chembl_id=settings.target_chembl_id,
+            target_name=settings.target_name,
             created_at=datetime.now(),
         )
 
@@ -139,7 +138,7 @@ class LoopScheduler:
                 current_best_fp = self.cognition_store.best_fp_ever
             else:
                 # First cycle: use default parent
-                current_best_smiles = settings.DEFAULT_PARENT_SMILES
+                current_best_smiles = getattr(settings, "default_parent_smiles", "CC(C)(C)Nc1ncnc2nc(-c3ccc(O)cc3)n(C3CC3)c12")
                 current_best_fp = self.encoder.dense_to_sparse(
                     self.encoder.encode(current_best_smiles)
                 )
@@ -169,12 +168,13 @@ class LoopScheduler:
             )
 
             # Step 5: Check threshold for validation trigger
-            if record.predicted_affinity_nm < settings.AFFINITY_THRESHOLD_NM:
+            affinity_threshold_nm = getattr(settings, "affinity_threshold_nm", 10.0)
+            if record.predicted_affinity_nm < affinity_threshold_nm:
                 logger.info(
                     "VALIDATION TRIGGER: affinity %.3f nM below threshold %.3f nM — "
                     "would initiate experimental validation (module built separately)",
                     record.predicted_affinity_nm,
-                    settings.AFFINITY_THRESHOLD_NM,
+                    affinity_threshold_nm,
                 )
 
             # Step 6: Save cognition store
@@ -206,14 +206,17 @@ class LoopScheduler:
         The default interval is 72 minutes (20 cycles/day).
         """
         self.running = True
+        cycle_interval_seconds = getattr(settings, "cycle_interval_seconds", 4320)
+        max_cycles = getattr(settings, "max_cycles", 0)
         logger.info(
-            "Continuous loop started (interval=%.0f seconds)",
-            settings.CYCLE_INTERVAL_SECONDS,
+            "Continuous loop started (interval=%.0f seconds, max_cycles=%s)",
+            cycle_interval_seconds,
+            max_cycles if max_cycles > 0 else "unlimited",
         )
 
         while self.running:
             self.next_cycle_time = datetime.now() + timedelta(
-                seconds=settings.CYCLE_INTERVAL_SECONDS
+                seconds=cycle_interval_seconds
             )
             record = await self.run_single_cycle()
 
@@ -221,17 +224,16 @@ class LoopScheduler:
                 break
 
             # Check max cycles
-            if settings.MAX_CYCLES > 0 and self.cycle_count >= settings.MAX_CYCLES:
+            if max_cycles > 0 and self.cycle_count >= max_cycles:
                 logger.info(
-                    "Reached MAX_CYCLES limit (%d), stopping.", settings.MAX_CYCLES
+                    "Reached MAX_CYCLES limit (%d), stopping.", max_cycles
                 )
                 self.running = False
                 break
 
             # Sleep until next cycle
-            sleep_seconds = settings.CYCLE_INTERVAL_SECONDS
-            logger.info("Sleeping for %.0f seconds until next cycle...", sleep_seconds)
-            await asyncio.sleep(sleep_seconds)
+            logger.info("Sleeping for %.0f seconds until next cycle...", cycle_interval_seconds)
+            await asyncio.sleep(cycle_interval_seconds)
 
         logger.info("Continuous loop stopped (%d total cycles).", self.cycle_count)
 

@@ -12,7 +12,7 @@ from typing import List, Tuple
 
 import numpy as np
 
-from backend.core.fingerprint_encoder import FingerprintEncoder
+from backend.core import FingerprintEncoder
 
 logger = logging.getLogger(__name__)
 
