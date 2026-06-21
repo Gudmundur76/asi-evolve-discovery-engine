@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Evidence Report - {{ candidate_id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2.5cm;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 10pt; line-height: 1.5; color: #222; margin: 0; padding: 0;
+        }
+        h1 { font-size: 22pt; color: #1a365d; border-bottom: 3px solid #1a365d; padding-bottom: 8px; margin-top: 0; }
+        h2 { font-size: 14pt; color: #2c5282; border-bottom: 1px solid #cbd5e0; padding-bottom: 4px; margin-top: 24px; }
+        h3 { font-size: 11pt; color: #2d3748; margin-top: 16px; }
+        .metadata-box { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 16px 0; }
+        .metadata-box p { margin: 4px 0; font-size: 9.5pt; }
+        .metadata-label { font-weight: bold; color: #4a5568; display: inline-block; width: 160px; }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9pt; }
+        thead th { background: #1a365d; color: #fff; padding: 8px 10px; text-align: left; font-weight: 600; }
+        tbody td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; }
+        tbody tr:nth-child(even) { background: #f7fafc; }
+        .pass { color: #22543d; background: #c6f6d5; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        .fail { color: #742a2a; background: #fed7d7; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        .fingerprint-box { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px; font-family: "Courier New", monospace; font-size: 8pt; word-break: break-all; color: #4a5568; }
+        .cycle-entry { background: #f7fafc; border-left: 4px solid #4299e1; padding: 10px 14px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+        .cycle-entry .cycle-header { font-weight: bold; color: #2b6cb0; margin-bottom: 4px; }
+        .footer-note { font-size: 8pt; color: #718096; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    </style>
+</head>
+<body>
+    <!-- Sections are filled in programmatically by EvidenceBuilder -->
+    <div class="section">
+        <h1>Molecular Discovery Evidence Report</h1>
+        <p>Use <code>EvidenceBuilder.build_evidence()</code> to generate a complete report from data dictionaries.</p>
+    </div>
+</body>
+</html>
