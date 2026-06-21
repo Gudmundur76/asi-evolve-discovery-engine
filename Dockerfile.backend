@@ -1,0 +1,49 @@
+# ASI-Evolve Discovery Engine — Backend
+# Multi-stage build with conda for RDKit compatibility
+
+FROM condaforge/mambaforge:24.1.2-0 AS base
+
+WORKDIR /app
+
+# Install system dependencies for RDKit, WeasyPrint, and build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libglib2.0-0 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libcairo2 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create conda environment with Python 3.11 and RDKit
+RUN mamba create -n asi python=3.11 rdkit -c conda-forge -y \
+    && mamba clean --all -f -y
+
+# Make RUN commands use the conda environment
+SHELL ["conda", "run", "-n", "asi", "/bin/bash", "-c"]
+
+# Install Python dependencies via pip in the conda environment
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY backend/ ./backend/
+COPY scripts/ ./scripts/
+COPY data/ ./data/ 2>/dev/null || true
+
+# Create data directories
+RUN mkdir -p data/models data/cognition data/docking data/pdfs
+
+# Environment
+ENV PYTHONPATH=/app
+ENV DATABASE_URL=sqlite:///data/discoveries.db
+ENV MDE_DATA_DIR=/app/data
+ENV PATH=/opt/conda/envs/asi/bin:$PATH
+
+EXPOSE 8000
+
+# Run the FastAPI application
+CMD ["conda", "run", "--no-capture-output", "-n", "asi", \
+     "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

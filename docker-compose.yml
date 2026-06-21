@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: asi-evolve-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - MDE_DATA_DIR=/app/data
+      - DATABASE_URL=sqlite:///data/discoveries.db
+      - MDE_TARGET_CHEMBL_ID=CHEMBL203
+      - MDE_TARGET_NAME=Epidermal Growth Factor Receptor (EGFR)
+      - MDE_ACTIVITY_TYPE=IC50
+      - MDE_ACTIVITY_LIMIT=5000
+      - MDE_FINGERPRINT_RADIUS=2
+      - MDE_FINGERPRINT_NBITS=2048
+      - MDE_MODEL_PATH=/app/data/model.pkl
+      - MDE_MODEL_METADATA_PATH=/app/data/model_metadata.json
+      - MDE_N_ESTIMATORS=200
+      - MDE_MAX_DEPTH=20
+      - MDE_TEST_SIZE=0.2
+      - MDE_RANDOM_STATE=42
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - asi-network
+
+  # React Frontend
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: asi-evolve-web
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - asi-network
+
+  # Agent Loop Scheduler (runs continuously)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: asi-evolve-scheduler
+    command: >
+      conda run --no-capture-output -n asi
+      python -m backend.agents.loop_scheduler
+    volumes:
+      - ./data:/app/data
+    environment:
+      - MDE_DATA_DIR=/app/data
+      - DATABASE_URL=sqlite:///data/discoveries.db
+      - MDE_TARGET_CHEMBL_ID=CHEMBL203
+      - MDE_MODEL_PATH=/app/data/model.pkl
+      - MDE_MODEL_METADATA_PATH=/app/data/model_metadata.json
+      - PYTHONPATH=/app
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - asi-network
+
+networks:
+  asi-network:
+    driver: bridge
