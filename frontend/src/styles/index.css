@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a192f;
+  --bg-card: #112240;
+  --accent: #64ffda;
+  --text-primary: #e6f1ff;
+  --text-secondary: #8892b0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a192f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #233554;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64ffda;
+}
+
+::selection {
+  background: rgba(100, 255, 218, 0.25);
+  color: #e6f1ff;
+}
+
+@layer components {
+  .card-surface {
+    @apply bg-navy-800 rounded-card border border-navy-700;
+  }
+
+  .card-surface:hover {
+    @apply border-accent/30;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-accent/10 text-accent border border-accent/30 rounded-card
+           font-medium text-sm transition-all duration-200
+           hover:bg-accent/20 hover:border-accent/60 hover:shadow-glow
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-navy-700 text-text-primary border border-navy-600 rounded-card
+           font-medium text-sm transition-all duration-200
+           hover:bg-navy-600 hover:text-accent
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .badge-cyan {
+    @apply px-2 py-0.5 bg-accent/10 text-accent text-xs font-mono font-medium rounded-badge border border-accent/20;
+  }
+
+  .badge-green {
+    @apply px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-xs font-mono font-medium rounded-badge border border-emerald-500/20;
+  }
+
+  .badge-yellow {
+    @apply px-2 py-0.5 bg-warning/10 text-warning text-xs font-mono font-medium rounded-badge border border-warning/20;
+  }
+
+  .badge-red {
+    @apply px-2 py-0.5 bg-danger/10 text-danger text-xs font-mono font-medium rounded-badge border border-danger/20;
+  }
+
+  .badge-muted {
+    @apply px-2 py-0.5 bg-navy-700 text-text-secondary text-xs font-mono font-medium rounded-badge border border-navy-600;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-accent to-emerald-400 bg-clip-text text-transparent;
+  }
+}
