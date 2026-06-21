@@ -32,7 +32,7 @@ class EngineerAgent:
         """
         self.encoder = fingerprint_encoder
         logger.debug(
-            "EngineerAgent initialized (fp_size=%d)", self.encoder.fp_size
+            "EngineerAgent initialized (fp_size=%d)", self.encoder.n_bits
         )
 
     def apply_modification(
@@ -220,7 +220,7 @@ class EngineerAgent:
         Returns:
             List of integer positions where the fingerprint is 1.
         """
-        return FingerprintEncoder.dense_to_sparse(fp)
+        return self.encoder.fp_to_sparse(fp)
 
     @staticmethod
     def _compute_diff(fp1: np.ndarray, fp2: np.ndarray) -> List[int]:
