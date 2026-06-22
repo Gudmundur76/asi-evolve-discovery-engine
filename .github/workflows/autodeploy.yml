@@ -1,0 +1,25 @@
+name: Auto-publish to Manus on Push
+
+on:
+  push:
+    branches: [master, main]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Trigger Manus website.publish
+    steps:
+      - name: Publish notus.is via Manus API
+        run: |
+          RESPONSE=$(curl -s -X POST "https://api.manus.ai/v2/website.publish" \
+            -H "x-manus-api-key: ${{ secrets.MANUS_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"task_id":"BJcojgf7JzMcHmXrxWFYht"}')
+          echo "Response: $RESPONSE"
+          OK=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ok','false'))")
+          if [ "$OK" != "True" ]; then
+            echo "Publish failed: $RESPONSE"
+            exit 1
+          fi
+          VERSION=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('version_id','unknown'))")
+          echo "✅ Published version $VERSION to https://hivprotease-eq9ltmms.manus.space"
