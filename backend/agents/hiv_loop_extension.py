@@ -35,6 +35,7 @@ from backend.agents.multi_track_engineer import (
 )
 from backend.agents.citation_gate import CitationGate, CitationResult
 from backend.agents.convergence_detector import ConvergenceDetector, ConvergenceReport
+from backend.core.quantum_predictor import QuantumPredictor
 from backend.config import settings
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ class HIVLoopScheduler(LoopScheduler):
         self.convergence_detector = ConvergenceDetector(
             data_dir=str(settings.data_dir / "convergence"),
         )
+        self.quantum_predictor = QuantumPredictor()
 
         # Accumulate verified candidates across cycles for convergence analysis
         self._verified_corpus: List[Dict[str, Any]] = []
@@ -127,23 +129,29 @@ class HIVLoopScheduler(LoopScheduler):
         self._daily_stats["candidates_generated"] += total_generated
         logger.info("4-track generation: %d candidates total", total_generated)
 
-        # ── Step 3: CitationGate (Gate 1) ────────────────────────────────
+        # ── Step 3: CitationGate (Gate 1) + Quantum Scoring ──────────────
         citation_passed: List[Dict[str, Any]] = []
         citation_failed = 0
 
         for track_id, candidates in all_tracks.items():
             for cand in candidates:
                 try:
+                    # 1. Quantum scoring
+                    q_score = self.quantum_predictor.score_candidate(cand.smiles)
+                    
+                    # 2. Citation verification
                     result: CitationResult = self.citation_gate.verify(
                         smiles=cand.smiles,
                         compound_name=f"{track_id}_{cand.modification_type}",
                         predicted_pic50=cand.predicted_pic50 or 0.0,
+                        quantum_score=q_score,
                     )
                     if result.gate_passed:
                         citation_passed.append({
                             "smiles": cand.smiles,
                             "track": track_id,
                             "predicted_pic50": cand.predicted_pic50 or 0.0,
+                            "quantum_score": q_score,
                             "citation_confidence": result.confidence_score,
                             "pubmed_ids": result.pubmed_ids,
                             "scaffold_family": cand.modification_type,

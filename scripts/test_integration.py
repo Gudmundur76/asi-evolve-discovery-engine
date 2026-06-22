@@ -320,6 +320,45 @@ def test_persist_script() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Phase 7: QuantumPredictor (Origin Pilot / WuKong)
+# ─────────────────────────────────────────────────────────────────────────────
+def test_quantum_predictor() -> None:
+    logger.info("\n=== Phase 7: QuantumPredictor (Origin Pilot / WuKong) ===")
+    try:
+        from backend.core.quantum_predictor import QuantumPredictor
+
+        qp = QuantumPredictor()
+        check("QuantumPredictor: instantiates", True)
+        check("QuantumPredictor: backend is CPU Simulator (no API key)",
+              "CPU Simulator" in qp.backend_name, qp.backend_name)
+
+        # Test 1: Darunavir score is in [0, 1]
+        darunavir_smiles = "CC(C)(C)OC(=O)N[C@@H](Cc1ccccc1)[C@@H](O)CN1C[C@@H]2CCOC[C@@H]2C1=O"
+        score_daruna = qp.score_candidate(darunavir_smiles)
+        check("QuantumPredictor: Darunavir score in [0, 1]",
+              0.0 <= score_daruna <= 1.0, f"got {score_daruna:.4f}")
+
+        # Test 2: Two different molecules produce different scores
+        lopinavir_smiles = "CC1=CC(=CC(=C1)C)C(=O)NC(CC2CCCCC2)CC(NC(=O)C3CSC4=CC=CC=C34)Cc5ccccc5"
+        score_lopi = qp.score_candidate(lopinavir_smiles)
+        check("QuantumPredictor: Lopinavir score in [0, 1]",
+              0.0 <= score_lopi <= 1.0, f"got {score_lopi:.4f}")
+        check("QuantumPredictor: Darunavir and Lopinavir scores differ",
+              abs(score_daruna - score_lopi) > 0.01,
+              f"Darunavir={score_daruna:.4f}, Lopinavir={score_lopi:.4f}")
+
+        # Test 3: CitationGate accepts quantum_score kwarg
+        from backend.agents.citation_gate import CitationGate
+        gate = CitationGate(confidence_threshold=0.85)
+        claim = gate._build_claim("Darunavir_Q", 9.1, "HIV-1 protease", score_daruna)
+        check("QuantumPredictor: claim includes WuKong quantum note",
+              "WuKong" in claim, f"claim={claim[:80]}...")
+
+    except Exception as e:
+        check("QuantumPredictor: import and run", False, str(e))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Summary
 # ─────────────────────────────────────────────────────────────────────────────
 def print_summary() -> int:
@@ -354,5 +393,6 @@ if __name__ == "__main__":
     test_citation_gate()
     test_convergence_detector()
     test_persist_script()
+    test_quantum_predictor()
 
     sys.exit(print_summary())

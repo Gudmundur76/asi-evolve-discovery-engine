@@ -102,6 +102,7 @@ class CitationGate:
         compound_name: str,
         predicted_pic50: float,
         target_name: str = "HIV-1 protease",
+        quantum_score: float = 0.5,
     ) -> CitationResult:
         """Verify a single candidate against the citation knowledge graph.
 
@@ -115,13 +116,16 @@ class CitationGate:
             Predicted pIC50 value from the ensemble model.
         target_name:
             Target protein name (default 'HIV-1 protease').
+        quantum_score:
+            VQE-derived quantum affinity score in [0, 1] from QuantumPredictor.
+            Included in the claim for richer citation context (default 0.5).
 
         Returns
         -------
         CitationResult with gate_passed=True if verdict is 'Supported'
         and confidence_score >= threshold.
         """
-        claim = self._build_claim(compound_name, predicted_pic50, target_name)
+        claim = self._build_claim(compound_name, predicted_pic50, target_name, quantum_score)
         logger.debug("CitationGate: verifying claim: %s", claim)
 
         for attempt in range(MAX_RETRIES + 1):
@@ -240,14 +244,21 @@ class CitationGate:
         compound_name: str,
         predicted_pic50: float,
         target_name: str,
+        quantum_score: float = 0.5,
     ) -> str:
         """Build a natural-language claim for the verification API."""
         # Convert pIC50 to IC50 in nM for a more natural claim
         ic50_nm = 10 ** (9 - predicted_pic50) if predicted_pic50 > 0 else 1000.0
+        quantum_note = (
+            f" Quantum VQE affinity score: {quantum_score:.3f} (Origin Pilot / WuKong)."
+            if quantum_score != 0.5
+            else ""
+        )
         return (
             f"{compound_name} inhibits {target_name} with predicted pIC50 "
             f"{predicted_pic50:.2f} (IC50 ≈ {ic50_nm:.1f} nM), consistent with "
             f"the hydroxyethylamine scaffold class of HIV protease inhibitors."
+            f"{quantum_note}"
         )
 
     def _parse_response(
