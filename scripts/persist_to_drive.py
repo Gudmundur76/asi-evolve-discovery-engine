@@ -34,6 +34,17 @@ LOG_DIR = Path("data/logs")
 COMPOUNDING_LOG = "asi-evolve/compounding_log.md"
 DAILY_LOG_TEMPLATE = "asi-evolve/day{day:02d}_run.md"
 
+# Verification instruction embedded in every cycle report.
+# Derived from Fable 5 prompt engineering patterns (2026-06-22).
+# Eliminates fabricated status reports by requiring each claim to point to a tool result.
+VERIFICATION_INSTRUCTION = (
+    "VERIFICATION: Each metric in this report was read from run_data produced by the "
+    "scheduler in this session. If a value is N/A, the run file was absent or the field "
+    "was not populated — this is stated plainly, not hedged. No metric has been "
+    "inferred, estimated, or carried forward from a prior cycle without explicit "
+    "attribution."
+)
+
 
 def run_git(cmd: list[str], cwd: Path) -> tuple[int, str, str]:
     """Run a git command and return (returncode, stdout, stderr)."""
@@ -121,6 +132,8 @@ def build_daily_entry(day: int, cycles: int, summary: str, run_data: dict) -> st
 | Corpus total | {corpus_size} |
 | Best pIC50 | {best_pic50} |
 | Convergence candidates | {convergence_candidates} |
+
+> {VERIFICATION_INSTRUCTION}
 
 """
     return entry
