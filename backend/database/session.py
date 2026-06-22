@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -20,10 +21,13 @@ logger = logging.getLogger(__name__)
 # Engine & session factory
 # ---------------------------------------------------------------------------
 
-# Allow override via environment variable for tests / different deployments
+# Use MDE_DATABASE_URL (project-specific) to avoid collision with the
+# sandbox-level DATABASE_URL environment variable (which points to MySQL).
+# Falls back to a SQLite file in the data/ directory relative to the repo root.
+_default_db_path = Path(__file__).parent.parent.parent / "data" / "hiv_protease.db"
 DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite+aiosqlite:///data/discovery.db",
+    "MDE_DATABASE_URL",
+    f"sqlite+aiosqlite:///{_default_db_path}",
 )
 
 engine = create_async_engine(
