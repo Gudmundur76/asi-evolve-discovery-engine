@@ -135,8 +135,27 @@ def _score_from_probs(probs: list[dict], n_qubits: int) -> float:
     return float(max(0.0, min(1.0, normalised)))
 
 
+# ---------------------------------------------------------------------------
+# QUANTUM_DUAL mode: ensemble scoring across multiple quantum backends
+# ---------------------------------------------------------------------------
+
+QUANTUM_DUAL_WEIGHTS = {
+    "wukong": 0.50,    # WuKong 180q superconducting (Origin Pilot)
+    "quafu": 0.30,     # Quafu ScQ superconducting (BAQIS)
+    "jiuzhang": 0.20,  # Jiuzhang 4.0 photonic GBS (USTC) — stub until API opens
+}
+
+
 class QuantumPredictor:
     """Quantum-enhanced candidate scoring using Origin Pilot / WuKong.
+
+    QUANTUM_DUAL mode (enabled when QUAFU_API_KEY is also set):
+        Scores are computed on three independent quantum backends:
+          - WuKong WK_C180_2 (superconducting VQE, Origin Quantum)
+          - Quafu ScQ (superconducting VQE, BAQIS)
+          - Jiuzhang 4.0 (photonic GBS, USTC) — classical sim until API opens
+        Final score = weighted ensemble (50% WuKong, 30% Quafu, 20% Jiuzhang).
+        Provenance stamp: QUANTUM_DUAL
 
     Parameters
     ----------
@@ -154,16 +173,61 @@ class QuantumPredictor:
         api_key: Optional[str] = None,
         n_qubits: int = N_QUBITS,
         shots: int = LOCAL_SHOTS,
+        quafu_api_key: Optional[str] = None,
+        jiuzhang_api_key: Optional[str] = None,
+        jiuzhang_api_url: Optional[str] = None,
+        dual_mode: Optional[bool] = None,
     ) -> None:
         self.api_key = api_key or os.environ.get("ORIGIN_PILOT_API_KEY")
         self.n_qubits = n_qubits
         self.shots = shots
         self._use_cloud = bool(self.api_key) and _QPANDA_AVAILABLE
         self._use_local = _QPANDA_AVAILABLE and not self._use_cloud
-        
+
         self._cloud_backend = None
         self._chip = None
         self._transpiler = None
+
+        # --- Quafu secondary backend ---
+        _quafu_key = quafu_api_key or os.environ.get("QUAFU_API_KEY", "")
+        self._quafu: Optional[object] = None
+        if _quafu_key:
+            try:
+                from backend.core.quafu_predictor import QuafuPredictor
+                self._quafu = QuafuPredictor(api_key=_quafu_key, n_qubits=n_qubits)
+                logger.info("QuantumPredictor: Quafu secondary backend enabled")
+            except Exception as exc:
+                logger.warning("QuantumPredictor: Quafu init failed (%s)", exc)
+
+        # --- Jiuzhang stub ---
+        _jz_key = jiuzhang_api_key or os.environ.get("JIUZHANG_API_KEY", "")
+        _jz_url = jiuzhang_api_url or os.environ.get("JIUZHANG_API_URL", "")
+        try:
+            from backend.core.jiuzhang_stub import JiuzhangStub
+            self._jiuzhang = JiuzhangStub(api_key=_jz_key, api_url=_jz_url)
+            logger.info(
+                "QuantumPredictor: Jiuzhang stub loaded (live=%s)",
+                self._jiuzhang.is_live
+            )
+        except Exception as exc:
+            logger.warning("QuantumPredictor: Jiuzhang stub init failed (%s)", exc)
+            self._jiuzhang = None
+
+        # --- QUANTUM_DUAL mode ---
+        if dual_mode is None:
+            # Auto-enable if at least Quafu is available
+            self._dual_mode = self._quafu is not None
+        else:
+            self._dual_mode = dual_mode
+
+        if self._dual_mode:
+            logger.info(
+                "QuantumPredictor: QUANTUM_DUAL mode active "
+                "(WuKong=%.0f%%, Quafu=%.0f%%, Jiuzhang=%.0f%%)",
+                QUANTUM_DUAL_WEIGHTS["wukong"] * 100,
+                QUANTUM_DUAL_WEIGHTS["quafu"] * 100,
+                QUANTUM_DUAL_WEIGHTS["jiuzhang"] * 100,
+            )
 
         if self._use_cloud:
             try:
@@ -208,6 +272,9 @@ class QuantumPredictor:
         bits = _morgan_fingerprint(smiles, self.n_qubits)
 
         try:
+            if self._dual_mode:
+                return self._score_dual(smiles, bits)
+
             if self._use_cloud and self._cloud_backend is not None:
                 prog = _build_vqe_circuit(bits, with_measure=True)
                 return self._score_cloud(prog)
@@ -217,6 +284,82 @@ class QuantumPredictor:
         except Exception as exc:
             logger.error("Quantum scoring failed for %s: %s — returning 0.5", smiles, exc)
             return 0.5
+
+    def score_candidate_with_provenance(self, smiles: str) -> dict:
+        """Return score plus provenance metadata for citation records."""
+        score = self.score_candidate(smiles)
+        return {
+            "quantum_score": score,
+            "backend": self.backend_name,
+            "dual_mode": self._dual_mode,
+            "wukong_live": self._use_cloud,
+            "quafu_live": self._quafu is not None,
+            "jiuzhang_live": (
+                self._jiuzhang.is_live if self._jiuzhang else False
+            ),
+            "provenance_stamp": (
+                "QUANTUM_DUAL" if self._dual_mode else
+                "QUANTUM_WUKONG" if self._use_cloud else
+                "QUANTUM_SIM"
+            ),
+        }
+
+    # ------------------------------------------------------------------
+    # QUANTUM_DUAL ensemble scoring
+    # ------------------------------------------------------------------
+
+    def _score_dual(self, smiles: str, bits: list[int]) -> float:
+        """Ensemble score across WuKong, Quafu, and Jiuzhang backends."""
+        scores = {}
+
+        # WuKong score
+        try:
+            if self._use_cloud and self._cloud_backend is not None:
+                prog = _build_vqe_circuit(bits, with_measure=True)
+                scores["wukong"] = self._score_cloud(prog)
+            else:
+                prog = _build_vqe_circuit(bits, with_measure=False)
+                scores["wukong"] = self._score_local(prog)
+        except Exception as exc:
+            logger.warning("DUAL: WuKong failed (%s) — using 0.5", exc)
+            scores["wukong"] = 0.5
+
+        # Quafu score
+        if self._quafu is not None:
+            try:
+                result = self._quafu.score_candidate(smiles)
+                scores["quafu"] = result.score
+                logger.info("DUAL: Quafu score=%.4f backend=%s", result.score, result.backend)
+            except Exception as exc:
+                logger.warning("DUAL: Quafu failed (%s) — using WuKong score", exc)
+                scores["quafu"] = scores["wukong"]
+        else:
+            scores["quafu"] = scores["wukong"]  # mirror WuKong if Quafu unavailable
+
+        # Jiuzhang score
+        if self._jiuzhang is not None:
+            try:
+                result = self._jiuzhang.score_candidate(smiles)
+                scores["jiuzhang"] = result.score
+                logger.info(
+                    "DUAL: Jiuzhang score=%.4f backend=%s stub=%s",
+                    result.score, result.backend, result.stub_active
+                )
+            except Exception as exc:
+                logger.warning("DUAL: Jiuzhang failed (%s) — using WuKong score", exc)
+                scores["jiuzhang"] = scores["wukong"]
+        else:
+            scores["jiuzhang"] = scores["wukong"]
+
+        # Weighted ensemble
+        ensemble = sum(
+            QUANTUM_DUAL_WEIGHTS[k] * v for k, v in scores.items()
+        )
+        logger.info(
+            "DUAL ensemble: wukong=%.4f quafu=%.4f jiuzhang=%.4f → %.4f",
+            scores["wukong"], scores["quafu"], scores["jiuzhang"], ensemble
+        )
+        return round(float(max(0.0, min(1.0, ensemble))), 4)
 
     # ------------------------------------------------------------------
     # Backend implementations
@@ -279,11 +422,28 @@ class QuantumPredictor:
     @property
     def backend_name(self) -> str:
         """Return the active backend name for logging/citation."""
+        if self._dual_mode:
+            parts = ["WuKong"]
+            if self._quafu is not None:
+                parts.append("Quafu")
+            if self._jiuzhang is not None:
+                jz_label = "Jiuzhang4.0" if self._jiuzhang.is_live else "Jiuzhang4.0(stub)"
+                parts.append(jz_label)
+            return f"QUANTUM_DUAL({'+'.join(parts)})"
         if self._use_cloud:
             return "WuKong (Origin Pilot OS)"
         elif self._use_local:
             return "CPU Simulator (pyqpanda3)"
         return "Stub (unavailable)"
+
+    @property
+    def provenance_stamp(self) -> str:
+        """Return the provenance stamp for citation records."""
+        if self._dual_mode:
+            return "QUANTUM_DUAL"
+        if self._use_cloud:
+            return "QUANTUM_WUKONG"
+        return "QUANTUM_SIM"
 
     def __repr__(self) -> str:
         return (

@@ -359,6 +359,81 @@ def test_quantum_predictor() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Phase 8: Quafu + Jiuzhang + QUANTUM_DUAL
+# ─────────────────────────────────────────────────────────────────────────────
+def test_quantum_dual() -> None:
+    logger.info("\n=== Phase 8: Quafu + Jiuzhang + QUANTUM_DUAL ===")
+    darunavir = "CC(C)(C)OC(=O)N[C@@H](Cc1ccccc1)[C@@H](O)CN1C[C@@H]2CCOC[C@@H]2C1=O"
+    lopinavir = "CC1=CC(=CC(=C1)C)C(=O)NC(CC2CCCCC2)CC(NC(=O)C3CSC4=CC=CC=C34)Cc5ccccc5"
+
+    # --- Quafu predictor ---
+    try:
+        from backend.core.quafu_predictor import QuafuPredictor
+        qf = QuafuPredictor()  # no API key → classical fallback
+        check("QuafuPredictor: instantiates without API key", True)
+        check("QuafuPredictor: backend is classical fallback",
+              "classical" in qf.backend_name.lower(), qf.backend_name)
+        r1 = qf.score_candidate(darunavir)
+        check("QuafuPredictor: Darunavir score in [0,1]",
+              0.0 <= r1.score <= 1.0, f"got {r1.score:.4f}")
+        r2 = qf.score_candidate(lopinavir)
+        check("QuafuPredictor: Darunavir != Lopinavir",
+              abs(r1.score - r2.score) > 0.01,
+              f"Darunavir={r1.score:.4f}, Lopinavir={r2.score:.4f}")
+        check("QuafuPredictor: result has backend field",
+              isinstance(r1.backend, str) and len(r1.backend) > 0, r1.backend)
+        check("QuafuPredictor: result has stub_active=True (no API key)",
+              r1.stub_active is True, str(r1.stub_active))
+    except Exception as e:
+        check("QuafuPredictor: import and run", False, str(e))
+
+    # --- Jiuzhang stub ---
+    try:
+        from backend.core.jiuzhang_stub import JiuzhangStub
+        jz = JiuzhangStub()  # no API key → classical GBS sim
+        check("JiuzhangStub: instantiates without API key", True)
+        check("JiuzhangStub: is_live=False (no API key)",
+              jz.is_live is False, str(jz.is_live))
+        r3 = jz.score_candidate(darunavir)
+        check("JiuzhangStub: Darunavir score in [0,1]",
+              0.0 <= r3.score <= 1.0, f"got {r3.score:.4f}")
+        r4 = jz.score_candidate(lopinavir)
+        check("JiuzhangStub: Darunavir != Lopinavir",
+              abs(r3.score - r4.score) > 0.01,
+              f"Darunavir={r3.score:.4f}, Lopinavir={r4.score:.4f}")
+        check("JiuzhangStub: stub_active=True",
+              r3.stub_active is True, str(r3.stub_active))
+        check("JiuzhangStub: activation_instructions present",
+              len(jz.activation_instructions) > 50, jz.activation_instructions[:80])
+    except Exception as e:
+        check("JiuzhangStub: import and run", False, str(e))
+
+    # --- QUANTUM_DUAL ensemble ---
+    try:
+        from backend.core.quantum_predictor import QuantumPredictor, QUANTUM_DUAL_WEIGHTS
+        qp_dual = QuantumPredictor(dual_mode=True)
+        check("QUANTUM_DUAL: instantiates with dual_mode=True", True)
+        check("QUANTUM_DUAL: backend_name contains QUANTUM_DUAL",
+              "QUANTUM_DUAL" in qp_dual.backend_name, qp_dual.backend_name)
+        check("QUANTUM_DUAL: provenance_stamp is QUANTUM_DUAL",
+              qp_dual.provenance_stamp == "QUANTUM_DUAL", qp_dual.provenance_stamp)
+        s_dual = qp_dual.score_candidate(darunavir)
+        check("QUANTUM_DUAL: Darunavir ensemble score in [0,1]",
+              0.0 <= s_dual <= 1.0, f"got {s_dual:.4f}")
+        weight_sum = sum(QUANTUM_DUAL_WEIGHTS.values())
+        check("QUANTUM_DUAL: weights sum to 1.0",
+              abs(weight_sum - 1.0) < 1e-9, f"sum={weight_sum}")
+        prov = qp_dual.score_candidate_with_provenance(darunavir)
+        for key in ("quantum_score", "backend", "dual_mode", "provenance_stamp"):
+            check(f"QUANTUM_DUAL: provenance dict has '{key}'",
+                  key in prov, str(list(prov.keys())))
+        check("QUANTUM_DUAL: provenance_stamp in dict is QUANTUM_DUAL",
+              prov["provenance_stamp"] == "QUANTUM_DUAL", prov.get("provenance_stamp"))
+    except Exception as e:
+        check("QUANTUM_DUAL: ensemble scoring", False, str(e))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Summary
 # ─────────────────────────────────────────────────────────────────────────────
 def print_summary() -> int:
@@ -394,5 +469,6 @@ if __name__ == "__main__":
     test_convergence_detector()
     test_persist_script()
     test_quantum_predictor()
+    test_quantum_dual()
 
     sys.exit(print_summary())
