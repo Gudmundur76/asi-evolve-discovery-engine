@@ -78,8 +78,10 @@ class Settings(BaseSettings):
     backoff_factor: float = 1.5
 
     # Citation verification gate (Gate 1 — before ADMET and docking)
-    citation_is_url: str = "https://citation.manus.space"
-    citation_is_vertical: str = "hiv_protease"
+    # Set MDE_CITATION_IS_URL env var to override.
+    # Default points to the ttruthdesk / citation.is deployment.
+    citation_is_url: str = "https://protein-truth-desk.manus.space"
+    citation_is_vertical: str = "molecular_discovery"
     citation_confidence_threshold: float = 0.85
 
     # Convergence detection

@@ -69,6 +69,12 @@ class CycleRecord:
     is_best_so_far: bool
     lesson: str
     fingerprint_diff: List[int]
+    # Quantum provenance fields (optional — populated when quantum scoring is active)
+    pic50_vqe: Optional[float] = None          # pIC50 derived from VQE score
+    quantum_hardware: Optional[str] = None     # e.g. "WuKong (superconducting, 72 qubits)"
+    provenance_status: Optional[str] = None    # "quantum-hardware" | "quantum-sim" | None
+    confidence: Optional[float] = None         # ensemble confidence [0, 1]
+    citation_ids: List[str] = field(default_factory=list)  # citation.is permanent URLs
 
 
 @dataclass
@@ -100,6 +106,8 @@ class CognitionStore:
     best_fp_ever: List[int] = field(default_factory=list)
     accumulated_lessons: List[str] = field(default_factory=list)
     statistical_patterns: dict = field(default_factory=dict)
+    # Maps cycle_id → citation.is permanent URL for verified candidates
+    citation_registry: Dict[int, str] = field(default_factory=dict)
 
     # ------------------------------------------------------------------ #
     # Core mutation helpers
@@ -242,6 +250,11 @@ class CognitionStore:
                     "is_best_so_far": c.is_best_so_far,
                     "lesson": c.lesson,
                     "fingerprint_diff": c.fingerprint_diff,
+                    "pic50_vqe": c.pic50_vqe,
+                    "quantum_hardware": c.quantum_hardware,
+                    "provenance_status": c.provenance_status,
+                    "confidence": c.confidence,
+                    "citation_ids": c.citation_ids,
                 }
                 for c in self.cycles
             ],
@@ -251,6 +264,9 @@ class CognitionStore:
             "accumulated_lessons": self.accumulated_lessons,
             "statistical_patterns": {
                 str(k): v for k, v in self.statistical_patterns.items()
+            },
+            "citation_registry": {
+                str(k): v for k, v in self.citation_registry.items()
             },
         }
 
@@ -302,6 +318,11 @@ class CognitionStore:
                     is_best_so_far=c_data["is_best_so_far"],
                     lesson=c_data["lesson"],
                     fingerprint_diff=c_data["fingerprint_diff"],
+                    pic50_vqe=c_data.get("pic50_vqe"),
+                    quantum_hardware=c_data.get("quantum_hardware"),
+                    provenance_status=c_data.get("provenance_status"),
+                    confidence=c_data.get("confidence"),
+                    citation_ids=c_data.get("citation_ids", []),
                 )
             )
 
@@ -321,6 +342,10 @@ class CognitionStore:
             best_fp_ever=data.get("best_fp_ever", []),
             accumulated_lessons=data.get("accumulated_lessons", []),
             statistical_patterns=restored_patterns,
+            citation_registry={
+                int(k): v
+                for k, v in data.get("citation_registry", {}).items()
+            },
         )
         logger.info(
             "Cognition store loaded from %s (%d cycles)", path, len(store.cycles)

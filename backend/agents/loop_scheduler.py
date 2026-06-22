@@ -186,6 +186,31 @@ class LoopScheduler:
                 cycle_number,
                 self.cognition_store.best_affinity_ever,
             )
+
+            # Step 7: Emit best candidate to citation.is (fire-and-forget)
+            # Only triggered when a new best is found to avoid spamming the API.
+            if record.is_best_so_far:
+                try:
+                    from backend.api.candidates import emit_best_candidate_to_citation_is
+                    citation_url = await emit_best_candidate_to_citation_is(
+                        store=self.cognition_store,
+                        ttruthdesk_url=settings.citation_is_url,
+                        store_path=self.store_path,
+                    )
+                    if citation_url:
+                        logger.info(
+                            "Cycle %d: best candidate emitted to citation.is → %s",
+                            cycle_number,
+                            citation_url,
+                        )
+                except Exception as _emit_exc:
+                    # Non-fatal: emission failure must never break the discovery loop
+                    logger.warning(
+                        "Cycle %d: citation.is emission failed (non-fatal): %s",
+                        cycle_number,
+                        _emit_exc,
+                    )
+
             return record
 
         except Exception as exc:
