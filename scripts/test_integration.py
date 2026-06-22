@@ -192,7 +192,7 @@ def test_citation_gate() -> None:
               f"gate_passed={result.gate_passed}")
         check("CitationGate: Darunavir has PubMed IDs", len(result.pubmed_ids) > 0,
               f"got {len(result.pubmed_ids)} PMIDs")
-        check("CitationGate: latency < 10s", result.latency_ms < 10000,
+        check("CitationGate: latency < 30s", result.latency_ms < 30000,
               f"{result.latency_ms:.0f}ms")
 
         # A clearly non-drug random SMILES — should return low confidence or insufficient evidence

@@ -22,7 +22,7 @@ from backend.database.discovery_db import create_discovery, list_discoveries
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-CORPUS_PATH = Path("/home/ubuntu/novus-is/engine/data/hiv_protease_corpus.json")
+CORPUS_PATH = Path(__file__).parent.parent / "data" / "hiv_protease_corpus.json"
 
 
 async def migrate() -> None:

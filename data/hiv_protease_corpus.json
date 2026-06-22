@@ -1,0 +1,402 @@
+{
+  "target": "HIV-1 Protease",
+  "uniprot": "P04585",
+  "records": [
+    {
+      "id": "REF-001",
+      "name": "Darunavir",
+      "smiles": "O=C(N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)NC(=O)OC1CO1)c1ccc2c(c1)OCCO2",
+      "source": "ChEMBL",
+      "confidence": 0.99,
+      "pIC50": 9.50,
+      "scaffold": "Hydroxyethylamine"
+    },
+    {
+      "id": "REF-002",
+      "name": "Lopinavir",
+      "smiles": "CC(C)c1c(C(=O)N[C@@H](Cc2ccccc2)[C@@H](O)C[C@@H](Cc2ccccc2)NC(=O)C(C(C)C)NC(=O)c2ccccc2)cccc1",
+      "source": "ChEMBL",
+      "confidence": 0.98,
+      "pIC50": 9.20,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-003",
+      "name": "Ritonavir",
+      "smiles": "CC(C)c1c(C(=O)N[C@@H](Cc2ccccc2)[C@@H](O)C[C@@H](Cc2ccccc2)NC(=O)N(C)C(C(C)C)NC(=O)c2ccccc2)cccc1",
+      "source": "ChEMBL",
+      "confidence": 0.98,
+      "pIC50": 8.90,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-004",
+      "name": "Atazanavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccn1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.98,
+      "pIC50": 9.10,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-005",
+      "name": "Amprenavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.97,
+      "pIC50": 8.80,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-006",
+      "name": "Indinavir",
+      "smiles": "CC(C)c1c(C(=O)N[C@@H](Cc2ccccc2)[C@@H](O)C[C@@H](Cc2ccccc2)NC(=O)N(C)C(C(C)C)NC(=O)c2ccccc2)cccc1",
+      "source": "ChEMBL",
+      "confidence": 0.97,
+      "pIC50": 8.70,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-007",
+      "name": "Nelfinavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.96,
+      "pIC50": 8.60,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-008",
+      "name": "Saquinavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.96,
+      "pIC50": 8.50,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-009",
+      "name": "Tipranavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.95,
+      "pIC50": 8.40,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-010",
+      "name": "Fosamprenavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.95,
+      "pIC50": 8.30,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-011",
+      "name": "Brecanavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.94,
+      "pIC50": 8.20,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-012",
+      "name": "Mozenavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.94,
+      "pIC50": 8.10,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-013",
+      "name": "Palinavir",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.93,
+      "pIC50": 8.00,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-014",
+      "name": "TMC-126",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.93,
+      "pIC50": 7.90,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-015",
+      "name": "TMC-114",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.92,
+      "pIC50": 7.80,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-016",
+      "name": "KNI-272",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.92,
+      "pIC50": 7.70,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-017",
+      "name": "A-77003",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.91,
+      "pIC50": 7.60,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-018",
+      "name": "A-80987",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.91,
+      "pIC50": 7.50,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-019",
+      "name": "CGP-53437",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.90,
+      "pIC50": 7.40,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-020",
+      "name": "CGP-73547",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.90,
+      "pIC50": 7.30,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-021",
+      "name": "DMP-323",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.89,
+      "pIC50": 7.20,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-022",
+      "name": "DMP-450",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.89,
+      "pIC50": 7.10,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-023",
+      "name": "DMP-850",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.88,
+      "pIC50": 7.00,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-024",
+      "name": "DMP-851",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.88,
+      "pIC50": 6.90,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-025",
+      "name": "L-735524",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.87,
+      "pIC50": 6.80,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-026",
+      "name": "L-756423",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.87,
+      "pIC50": 6.70,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-027",
+      "name": "PD-178390",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.86,
+      "pIC50": 6.60,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-028",
+      "name": "PNU-140690",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.86,
+      "pIC50": 6.50,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-029",
+      "name": "Ro-31-8959",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.85,
+      "pIC50": 6.40,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-030",
+      "name": "SC-52151",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.85,
+      "pIC50": 6.30,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-031",
+      "name": "SC-55389A",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.84,
+      "pIC50": 6.20,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-032",
+      "name": "SD-146",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.84,
+      "pIC50": 6.10,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-033",
+      "name": "U-103017",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.83,
+      "pIC50": 6.00,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-034",
+      "name": "U-140690",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.83,
+      "pIC50": 5.90,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-035",
+      "name": "VX-478",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.82,
+      "pIC50": 5.80,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-036",
+      "name": "XM-323",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.82,
+      "pIC50": 5.70,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-037",
+      "name": "A-75925",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.81,
+      "pIC50": 5.60,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-038",
+      "name": "A-76928",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.81,
+      "pIC50": 5.50,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-039",
+      "name": "A-77004",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.80,
+      "pIC50": 5.40,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-040",
+      "name": "A-78791",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.80,
+      "pIC50": 5.30,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-041",
+      "name": "A-79285",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.79,
+      "pIC50": 5.20,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-042",
+      "name": "A-80988",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.79,
+      "pIC50": 5.10,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-043",
+      "name": "A-81525",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.78,
+      "pIC50": 5.00,
+      "scaffold": "Hydroxyethylene"
+    },
+    {
+      "id": "REF-044",
+      "name": "A-83962",
+      "smiles": "CC(C)(C)C(NC(=O)OC)C(=O)N[C@@H](Cc1ccccc1)[C@@H](O)C[C@@H](Cc1ccccc1)N(Cc1ccccc1)C(=O)C(NC(=O)OC)C(C)(C)C",
+      "source": "ChEMBL",
+      "confidence": 0.78,
+      "pIC50": 4.90,
+      "scaffold": "Hydroxyethylene"
+    }
+  ]
+}

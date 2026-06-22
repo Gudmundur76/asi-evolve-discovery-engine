@@ -17,6 +17,7 @@ env/
 
 # Data files
 data/
+!data/hiv_protease_corpus.json
 *.json
 
 # OS
