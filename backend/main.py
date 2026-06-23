@@ -26,6 +26,7 @@ from backend.api import (
 )
 from backend.config import settings
 from backend.database.session import create_tables, dispose_engine
+from backend.core.auto_bootstrap import ensure_model_ready
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,11 @@ async def lifespan(app: FastAPI):
     logger.info("Model path: %s", settings.model_path)
 
     await create_tables()
+
+    # Auto-bootstrap: train model from ChEMBL if model.pkl is missing.
+    # No-op on subsequent starts when the model file already exists.
+    await ensure_model_ready()
+
     yield
     # Shutdown
     await dispose_engine()

@@ -42,6 +42,16 @@ def _get_scheduler() -> LoopScheduler:
             logger.info("LoopScheduler singleton created")
         except Exception as exc:
             logger.error("Failed to create LoopScheduler: %s", exc, exc_info=True)
+            detail = str(exc)
+            # Model not yet trained (cold-start / bootstrap in progress) → 503 Retry
+            if "Model file not found" in detail or "model.pkl" in detail:
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "Model not ready yet — auto-bootstrap training is in progress. "
+                        "Check GET /health for model_ready status and retry in ~60 s."
+                    ),
+                )
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to initialize LoopScheduler: {exc}",
