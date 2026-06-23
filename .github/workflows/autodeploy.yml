@@ -7,14 +7,14 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    name: Trigger Manus website.publish
+    name: Publish asi-evolve discovery engine to Manus
     steps:
-      - name: Publish notus.is via Manus API
+      - name: Trigger Manus website.publish
         run: |
           RESPONSE=$(curl -s -X POST "https://api.manus.ai/v2/website.publish" \
             -H "x-manus-api-key: ${{ secrets.MANUS_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"task_id":"BJcojgf7JzMcHmXrxWFYht"}')
+            -d '{"website_id":"eq9LtmMSsvwYQwthHegFuV","visibility":"public"}')
           echo "Response: $RESPONSE"
           OK=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ok','false'))")
           if [ "$OK" != "True" ]; then
@@ -22,4 +22,26 @@ jobs:
             exit 1
           fi
           VERSION=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('version_id','unknown'))")
-          echo "✅ Published version $VERSION to https://hivprotease-eq9ltmms.manus.space"
+          echo "Publish triggered — version $VERSION"
+
+      - name: Poll until published
+        run: |
+          echo "Polling publish status..."
+          for i in $(seq 1 18); do
+            sleep 10
+            STATUS=$(curl -s --max-time 10 \
+              "https://api.manus.ai/v2/website.status?website_id=eq9LtmMSsvwYQwthHegFuV" \
+              -H "x-manus-api-key: ${{ secrets.MANUS_API_KEY }}" | \
+              python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('publish_status','unknown'))")
+            echo "  Attempt $i/18: $STATUS"
+            if [ "$STATUS" = "published" ]; then
+              echo "Live at https://hivprotease-eq9ltmms.manus.space"
+              exit 0
+            fi
+            if [ "$STATUS" = "failed" ]; then
+              echo "Publish failed"
+              exit 1
+            fi
+          done
+          echo "Timed out after 3 min"
+          exit 1
