@@ -92,7 +92,7 @@ class FingerprintEncoder:
         fp: np.ndarray,
         num_bits: int = 3,
         seed: Optional[int] = None,
-    ) -> tuple[np.ndarray, list[int]]:
+    ) -> np.ndarray:
         """Return a new fingerprint with *num_bits* randomly flipped.
 
         Args:
@@ -101,23 +101,23 @@ class FingerprintEncoder:
             seed: Optional RNG seed for reproducibility.
 
         Returns:
-            Tuple of (new fingerprint array, list of changed bit indices).
+            New fingerprint array with *num_bits* bits flipped.
         """
         rng = np.random.default_rng(seed)
         mutant = fp.copy()
         if num_bits <= 0 or self.n_bits <= 0:
-            return mutant, []
+            return mutant
         flip_idx = rng.choice(self.n_bits, size=min(num_bits, self.n_bits), replace=False)
         flip_idx = sorted([int(i) for i in flip_idx])
         mutant[flip_idx] = 1 - mutant[flip_idx]
-        return mutant, flip_idx
+        return mutant
 
     def crossover_fps(
         self,
         fp1: np.ndarray,
         fp2: np.ndarray,
         seed: Optional[int] = None,
-    ) -> tuple[np.ndarray, list[int]]:
+    ) -> np.ndarray:
         """Uniform crossover between two fingerprints.
 
         Args:
@@ -126,13 +126,12 @@ class FingerprintEncoder:
             seed: Optional RNG seed.
 
         Returns:
-            Tuple of (child fingerprint, list of bit positions that differ from fp1).
+            Child fingerprint array (uniform crossover of fp1 and fp2).
         """
         rng = np.random.default_rng(seed)
         mask = rng.random(self.n_bits) < 0.5
         child = np.where(mask, fp1, fp2).astype(np.uint8)
-        changed = np.flatnonzero(child != fp1).tolist()
-        return child, changed
+        return child
 
     # ------------------------------------------------------------------ #
     #  Sparse representation

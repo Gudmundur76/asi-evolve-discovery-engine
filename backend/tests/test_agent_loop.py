@@ -24,9 +24,18 @@ from backend.agents.cognition_store import CognitionStore
 from backend.agents.engineer import EngineerAgent
 from backend.agents.loop_scheduler import LoopScheduler
 from backend.agents.researcher import ResearcherAgent
-from backend.core.affinity_predictor import AffinityPredictor
-from backend.core.fingerprint_encoder import FingerprintEncoder
-from backend.core import settings
+from backend.core.predictor import AffinityPredictor
+from backend.core.fingerprint import FingerprintEncoder
+from backend import config as _config_module
+
+# Compatibility shim — expose settings-like attributes from config
+class settings:  # noqa: N801
+    FP_SIZE = 2048
+    LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s — %(message)s"
+    DEFAULT_PARENT_SMILES = "COc1cc2ncnc(Nc3ccc(F)c(Cl)c3)c2cc1OCCCN1CCOCC1"  # gefitinib
+    DEFAULT_TARGET_CHEMBL_ID = "CHEMBL203"
+    DEFAULT_TARGET_NAME = "Epidermal growth factor receptor erbB1"
+    AFFINITY_THRESHOLD_NM = 100.0
 
 # Configure logging
 logging.basicConfig(
