@@ -198,6 +198,32 @@ class HIVLoopScheduler(LoopScheduler):
         # ── Step 6: Daily persist_to_drive log ───────────────────────────
         await self._persist_daily_log(convergence_report)
 
+        # ── Step 7: GitHub bus writer ─────────────────────────────────────
+        # Publish best candidate to manus-persistent-drive/bus/asi-evolve/results/
+        # so generic-signal-api can read it without HTTP.
+        try:
+            from backend.agents.bus_writer import (
+                write_best_candidate_to_bus,
+                write_convergence_report_to_bus,
+            )
+            if convergence_report and convergence_report.candidates:
+                # Milestone day — publish all convergence candidates
+                await write_convergence_report_to_bus(
+                    convergence_report,
+                    self._daily_stats,
+                )
+            elif self._daily_stats.get("best_pic50", 0.0) >= 6.0 and self._verified_corpus:
+                # Non-milestone cycle — publish best single candidate if good enough
+                best = max(
+                    self._verified_corpus,
+                    key=lambda c: c.get("predicted_pic50", 0.0) if isinstance(c, dict) else 0.0,
+                    default=None,
+                )
+                if best:
+                    await write_best_candidate_to_bus(best, self._daily_stats)
+        except Exception as exc:
+            logger.warning("Bus writer failed (non-fatal): %s", exc)
+
         return record
 
     # ------------------------------------------------------------------
