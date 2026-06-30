@@ -139,8 +139,8 @@ class LoopScheduler:
             else:
                 # First cycle: use default parent
                 current_best_smiles = getattr(settings, "default_parent_smiles", "CC(C)(C)Nc1ncnc2nc(-c3ccc(O)cc3)n(C3CC3)c12")
-                current_best_fp = self.encoder.dense_to_sparse(
-                    self.encoder.encode(current_best_smiles)
+                current_best_fp = self.encoder.fp_to_sparse(
+                    self.encoder.smiles_to_fp(current_best_smiles)
                 )
 
             # Step 2: Researcher proposes modification
@@ -153,7 +153,9 @@ class LoopScheduler:
             )
 
             # Step 3: Engineer applies modification
-            base_fp_dense = self.encoder.sparse_to_dense(current_best_fp)
+            # Reconstruct dense fingerprint from sparse bit-index list
+            base_fp_dense = np.zeros(self.encoder.n_bits, dtype=np.float32)
+            base_fp_dense[list(current_best_fp)] = 1.0
             new_fp_dense, changed_bits = self.engineer.apply_modification(
                 base_fp_dense, modification
             )

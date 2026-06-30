@@ -85,7 +85,7 @@ class AnalyzerAgent:
         improvement = new_affinity - parent_affinity
 
         # Step 4: Check if best ever
-        is_best = new_affinity < self.store.best_affinity_ever
+        is_best = bool(new_affinity < self.store.best_affinity_ever)
         if is_best:
             logger.info(
                 "*** NEW BEST AFFINITY: %.3f nM (improvement: %+.3f) ***",
@@ -119,7 +119,7 @@ class AnalyzerAgent:
             parent_smiles=parent_smiles,
             proposed_modification=proposed_modification,
             new_smiles=new_smiles,
-            new_fp=self.encoder.dense_to_sparse(new_fp),
+            new_fp=self.encoder.fp_to_sparse(new_fp),
             predicted_affinity_nm=new_affinity,
             improvement=improvement,
             is_best_so_far=is_best,
@@ -163,11 +163,12 @@ class AnalyzerAgent:
         for cycle in reversed(self.store.cycles):
             if cycle.new_smiles == parent_smiles:
                 # Reconstruct the fingerprint from the stored sparse representation
-                fp_dense = self.encoder.sparse_to_dense(cycle.new_fp)
+                fp_dense = np.zeros(self.encoder.n_bits, dtype=np.float32)
+                fp_dense[list(cycle.new_fp)] = 1.0
                 return cycle.predicted_affinity_nm, fp_dense
 
         # Priority 3: encode from SMILES
-        fp_dense = self.encoder.encode(parent_smiles)
+        fp_dense = self.encoder.smiles_to_fp(parent_smiles)
         affinity = self.predictor.predict(fp_dense)
         return affinity, fp_dense
 

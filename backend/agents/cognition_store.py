@@ -30,6 +30,8 @@ class _CognitionJSONEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if isinstance(obj, (np.bool_, bool)):
+            return bool(obj)
         return super().default(obj)
 
 
