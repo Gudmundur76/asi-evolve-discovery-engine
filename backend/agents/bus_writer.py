@@ -83,11 +83,19 @@ def _commit_and_push(result_file: Path, message: str) -> bool:
 
     _git(["add", str(result_file.relative_to(BUS_REPO))], cwd=BUS_REPO)
     _git(["commit", "-m", message, "--allow-empty"], cwd=BUS_REPO)
+    # Pull before push to handle concurrent writes from multiple services
+    _git(["pull", "--rebase", "--quiet"], cwd=BUS_REPO)
     ok = _git(["push", "origin", "main"], cwd=BUS_REPO)
     if ok:
         logger.info("Bus result pushed: %s", result_file.name)
     else:
-        logger.warning("Push failed for %s — result saved locally only", result_file.name)
+        # One retry after a fresh pull
+        _git(["pull", "--rebase", "--quiet"], cwd=BUS_REPO)
+        ok = _git(["push", "origin", "main"], cwd=BUS_REPO)
+        if ok:
+            logger.info("Bus result pushed (retry): %s", result_file.name)
+        else:
+            logger.warning("Push failed for %s — result saved locally only", result_file.name)
     return ok
 
 
