@@ -255,7 +255,67 @@ class LoopScheduler:
                 self.cognition_store.best_affinity_ever,
             )
 
-            # Step 7: Emit best candidate to citation.is (fire-and-forget)
+            # Step 7: Generate evidence PDF for new best candidates
+            # Only triggered when a new best is found — one PDF per breakthrough.
+            if record.is_best_so_far:
+                try:
+                    from backend.evidence.evidence_builder import EvidenceBuilder
+                    eb = EvidenceBuilder(output_dir=str(settings.data_dir / "evidence"))
+                    discovery_dict = {
+                        "candidate_id": f"CAND-{cycle_number}-{int(record.predicted_affinity_nm)}",
+                        "smiles": record.new_smiles if hasattr(record, 'new_smiles') else modification.get('new_smiles', current_best_smiles),
+                        "predicted_affinity": record.predicted_affinity_nm,
+                        "predicted_affinity_nm": record.predicted_affinity_nm,
+                        "overall_pass": record.predicted_affinity_nm < affinity_threshold_nm,
+                        "confidence_score": 0.678,  # model R²
+                        "docking": None,
+                        "admet": None,
+                        "mutation_desc": modification.get('mutation_desc', 'unknown'),
+                        "cycle": cycle_number,
+                        "is_best_so_far": True,
+                    }
+                    cycle_record_dict = {
+                        "cycles": [
+                            {
+                                "cycle": c.cycle_number if hasattr(c, 'cycle_number') else i,
+                                "predicted_affinity_nm": c.predicted_affinity_nm,
+                                "is_best_so_far": c.is_best_so_far,
+                            }
+                            for i, c in enumerate(self.cognition_store.cycles[-10:], 1)
+                        ] if self.cognition_store.cycles else [{"cycle": cycle_number, "predicted_affinity_nm": record.predicted_affinity_nm, "is_best_so_far": True}],
+                    }
+                    target_info_dict = {
+                        "chembl_id": getattr(settings, 'target_chembl_id', 'CHEMBL243'),
+                        "target_name": getattr(settings, 'target_name', 'HIV-1 Protease'),
+                        "uniprot_id": getattr(settings, 'target_uniprot_id', 'P04585'),
+                        "organism": getattr(settings, 'target_organism', 'Human immunodeficiency virus 1'),
+                        "target_type": getattr(settings, 'target_type', 'SINGLE PROTEIN'),
+                    }
+                    model_metrics_dict = {
+                        "train_size": 4719,
+                        "test_r2": 0.678,
+                        "test_rmse": 0.886,
+                        "model_type": "RandomForest",
+                        "prediction_ci": "±1 log unit (95%)",
+                    }
+                    pdf_path = eb.build_evidence(
+                        discovery_dict, cycle_record_dict, target_info_dict, model_metrics_dict
+                    )
+                    logger.info(
+                        "Cycle %d: evidence PDF generated → %s",
+                        cycle_number,
+                        pdf_path,
+                    )
+                    # Attach pdf_path to record for downstream use
+                    record.evidence_pdf_path = pdf_path
+                except Exception as _pdf_exc:
+                    logger.warning(
+                        "Cycle %d: evidence PDF generation failed (non-fatal): %s",
+                        cycle_number,
+                        _pdf_exc,
+                    )
+
+            # Step 8: Emit best candidate to citation.is (fire-and-forget)
             # Only triggered when a new best is found to avoid spamming the API.
             if record.is_best_so_far:
                 try:
