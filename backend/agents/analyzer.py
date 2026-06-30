@@ -109,8 +109,9 @@ class AnalyzerAgent:
         changed_bits = self._get_changed_bits(actual_parent_fp, new_fp)
         self._update_statistics(self.store, changed_bits, improvement, new_fp)
 
-        # Step 8: Generate a new SMILES (mock: perturb parent)
-        new_smiles = self._generate_new_smiles(parent_smiles, cycle_number)
+        # Step 8: Use the real SMILES from the modification dict (set by loop_scheduler).
+        # Falls back to the stub only if loop_scheduler did not provide one.
+        new_smiles = proposed_modification.get("new_smiles") or self._generate_new_smiles(parent_smiles, cycle_number)
 
         # Create and record the cycle
         record = CycleRecord(
@@ -315,19 +316,23 @@ class AnalyzerAgent:
         )
 
     def _generate_new_smiles(self, parent_smiles: str, cycle_number: int) -> str:
-        """Generate a new SMILES string representing the modified molecule.
+        """Fallback SMILES generator used only when smiles_mutator is unavailable.
 
-        In a production system, this would use a graph-based generative model
-        or RDKit to decode the fingerprint back to a valid molecule. Here we
-        create a deterministic derivative marker for traceability.
+        In normal operation, loop_scheduler provides a real RDKit-mutated SMILES
+        via proposed_modification['new_smiles']. This stub is kept as a safety net.
 
         Args:
             parent_smiles: Original parent SMILES.
             cycle_number: Current cycle number.
 
         Returns:
-            A new SMILES string (or derivative marker).
+            A new SMILES string from RDKit mutation, or a derivative marker if
+            mutation fails.
         """
-        # In production: decode fp back to SMILES using a generative model
-        # For mock: append cycle marker to create traceable derivative
-        return f"{parent_smiles}_[C{cycle_number}]"
+        try:
+            from backend.agents.smiles_mutator import mutate_smiles
+            new_smiles, _ = mutate_smiles(parent_smiles, strategy="exploration", seed=cycle_number)
+            return new_smiles
+        except Exception:
+            # Last-resort fallback: return parent unchanged (not a derivative marker)
+            return parent_smiles

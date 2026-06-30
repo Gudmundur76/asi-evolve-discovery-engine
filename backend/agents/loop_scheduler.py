@@ -69,6 +69,10 @@ class LoopScheduler:
         self.cycle_count = 0
         self.last_cycle_time: Optional[datetime] = None
         self.next_cycle_time: Optional[datetime] = None
+        # Plateau convergence detector: counts cycles since the last improvement
+        self._cycles_since_improvement: int = 0
+        self._plateau_threshold: int = getattr(settings, "plateau_threshold", 5)
+        self._last_best_affinity: float = float("inf")
 
         # Initialize or load cognition store
         if cognition_store is not None:
@@ -144,6 +148,16 @@ class LoopScheduler:
                 )
 
             # Step 2: Researcher proposes modification
+            # If we are on a plateau (no improvement for N cycles), force guided_mutation
+            # so the Researcher exploits the statistical patterns instead of exploring.
+            plateau_override: Optional[str] = None
+            if self._cycles_since_improvement >= self._plateau_threshold:
+                plateau_override = "guided_mutation"
+                logger.info(
+                    "PLATEAU detected (%d cycles without improvement) — "
+                    "overriding strategy to guided_mutation",
+                    self._cycles_since_improvement,
+                )
             modification = self.researcher.propose_modification(
                 current_best_smiles=current_best_smiles,
                 current_best_fp=current_best_fp,
@@ -151,14 +165,52 @@ class LoopScheduler:
                 accumulated_lessons=self.cognition_store.accumulated_lessons,
                 cycle_number=cycle_number,
             )
+            if plateau_override:
+                modification["strategy"] = plateau_override
 
-            # Step 3: Engineer applies modification
-            # Reconstruct dense fingerprint from sparse bit-index list
+            # Step 3: Mutate SMILES with RDKit to get a real, synthesisable molecule
+            # This replaces the broken fingerprint bit-flip approach.
+            from backend.agents.smiles_mutator import mutate_smiles
+            strategy = modification.get("strategy", "exploration")
+            new_smiles_candidate, mutation_desc = mutate_smiles(
+                parent_smiles=current_best_smiles,
+                strategy=strategy,
+                seed=cycle_number,
+            )
+            logger.info("SMILES mutation [%s]: %s", mutation_desc, new_smiles_candidate[:60])
+            # Deduplication: if this molecule has been scored before, retry mutation
+            _dedup_retries = 0
+            while self.cognition_store.is_seen(new_smiles_candidate) and _dedup_retries < 5:
+                _dedup_retries += 1
+                logger.info(
+                    "Molecule already seen (attempt %d) — retrying mutation", _dedup_retries
+                )
+                new_smiles_candidate, mutation_desc = mutate_smiles(
+                    parent_smiles=current_best_smiles,
+                    strategy=strategy,
+                    seed=cycle_number + _dedup_retries * 1000,
+                )
+            if _dedup_retries > 0:
+                logger.info(
+                    "Dedup resolved after %d retries: %s", _dedup_retries, new_smiles_candidate[:60]
+                )
+            # Encode the new SMILES to a dense fingerprint for scoring
+            _encoded = self.encoder.smiles_to_fp(new_smiles_candidate)
+            # Reconstruct base fingerprint for diff computation
             base_fp_dense = np.zeros(self.encoder.n_bits, dtype=np.float32)
             base_fp_dense[list(current_best_fp)] = 1.0
-            new_fp_dense, changed_bits = self.engineer.apply_modification(
-                base_fp_dense, modification
-            )
+            if _encoded is None:
+                # Mutator returned an unparseable SMILES — fall back to parent fp
+                logger.warning(
+                    "smiles_to_fp returned None for mutated SMILES — using parent fp"
+                )
+                new_fp_dense = base_fp_dense.copy()
+                new_smiles_candidate = current_best_smiles
+            else:
+                new_fp_dense = _encoded.astype(np.float32)
+            # Attach the real SMILES and mutation description to the modification dict
+            modification["new_smiles"] = new_smiles_candidate
+            modification["mutation_desc"] = mutation_desc
 
             # Step 4: Analyzer evaluates and records
             record = self.analyzer.analyze_candidate(
@@ -181,6 +233,20 @@ class LoopScheduler:
 
             # Step 6: Save cognition store
             self.cognition_store.save(self.store_path)
+
+            # Update plateau detector
+            current_best = self.cognition_store.best_affinity_ever
+            if current_best < self._last_best_affinity:
+                self._cycles_since_improvement = 0
+                self._last_best_affinity = current_best
+                logger.info("Plateau counter reset (new best: %.3f nM)", current_best)
+            else:
+                self._cycles_since_improvement += 1
+                logger.debug(
+                    "No improvement this cycle (plateau count: %d/%d)",
+                    self._cycles_since_improvement,
+                    self._plateau_threshold,
+                )
 
             self.last_cycle_time = datetime.now()
             logger.info(
@@ -285,6 +351,8 @@ class LoopScheduler:
             "target": self.cognition_store.target_name,
             "target_chembl_id": self.cognition_store.target_chembl_id,
             "total_lessons": len(self.cognition_store.accumulated_lessons),
+            "cycles_since_improvement": self._cycles_since_improvement,
+            "plateau_threshold": self._plateau_threshold,
         }
 
     def start(self) -> None:

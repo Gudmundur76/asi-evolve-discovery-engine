@@ -11,7 +11,7 @@ import logging
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import numpy as np
 
@@ -110,10 +110,49 @@ class CognitionStore:
     statistical_patterns: dict = field(default_factory=dict)
     # Maps cycle_id → citation.is permanent URL for verified candidates
     citation_registry: Dict[int, str] = field(default_factory=dict)
+    # Set of InChIKey strings for molecules already evaluated (deduplication)
+    seen_inchikeys: Set[str] = field(default_factory=set)
 
     # ------------------------------------------------------------------ #
-    # Core mutation helpers
+    # Tanimoto / deduplication helpers
     # ------------------------------------------------------------------ #
+
+    def is_seen(self, smiles: str) -> bool:
+        """Return True if this SMILES has already been scored in a previous cycle.
+
+        Uses the RDKit InChIKey as a canonical identifier so that different
+        SMILES representations of the same molecule are treated as duplicates.
+
+        Args:
+            smiles: SMILES string to check.
+
+        Returns:
+            True if the molecule has been seen before, False otherwise.
+        """
+        try:
+            from rdkit import Chem
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None:
+                return False
+            inchikey = Chem.MolToInchiKey(mol)
+            return inchikey in self.seen_inchikeys
+        except Exception:
+            return False
+
+    def mark_seen(self, smiles: str) -> None:
+        """Register a SMILES as seen so future duplicates are skipped.
+
+        Args:
+            smiles: SMILES string to register.
+        """
+        try:
+            from rdkit import Chem
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is not None:
+                inchikey = Chem.MolToInchiKey(mol)
+                self.seen_inchikeys.add(inchikey)
+        except Exception:
+            pass
 
     def add_cycle(self, record: CycleRecord) -> None:
         """Append a cycle record and update running bests.
@@ -123,6 +162,8 @@ class CognitionStore:
         """
         self.cycles.append(record)
         self.accumulated_lessons.append(record.lesson)
+        # Register the new SMILES so we never re-score the same molecule
+        self.mark_seen(record.new_smiles)
 
         if record.predicted_affinity_nm < self.best_affinity_ever:
             self.best_affinity_ever = record.predicted_affinity_nm
