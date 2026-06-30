@@ -1,0 +1,18 @@
+{
+  "model_type": "RandomForestRegressor",
+  "n_molecules": 4719,
+  "n_train": 3775,
+  "n_test": 944,
+  "test_r2": 0.6776,
+  "test_rmse_log10nm": 0.886,
+  "cv_r2_mean": 0.494,
+  "cv_r2_std": 0.0626,
+  "target_chembl_id": "CHEMBL243",
+  "target_name": "HIV-1 Protease",
+  "fingerprint_radius": 2,
+  "fingerprint_nbits": 2048,
+  "trained_on": "log10(affinity_nM) = 9 - pChEMBL",
+  "prediction_unit": "log10(nM) \u2014 predictor converts to nM via 10^output",
+  "best_affinity_nM": 0.01,
+  "training_source": "ChEMBL CHEMBL243 pChEMBL-valued IC50/Ki measurements"
+}
