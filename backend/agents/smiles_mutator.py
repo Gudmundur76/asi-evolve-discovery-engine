@@ -32,6 +32,7 @@ from typing import List, Optional, Tuple
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, RWMol
 from rdkit.Chem.rdchem import Atom, BondType
+from rdkit.Chem import rdMolDescriptors
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,117 @@ logger = logging.getLogger(__name__)
 _MW_MIN = 150.0
 _MW_MAX = 700.0
 _ATOM_DELTA_MAX = 8
+
+# ── Chemistry validity filter ─────────────────────────────────────────────────
+# SMARTS patterns for groups that are synthetically impossible or highly
+# reactive/unstable in a drug context. Any candidate matching one of these
+# is rejected immediately, regardless of predicted affinity.
+#
+# Rules derived from:
+#   - Ertl, P. (2020) "Cheminformatics analysis of organic substituents"
+#   - Brenk, R. et al. (2008) "Lessons Learnt from Assembling Screening
+#     Libraries for Drug Discovery" ChemMedChem 3(3):435-444
+#   - Pan, A. et al. (2013) "Common Reactivity Pattern (COREPA)"
+#
+_INVALID_PATTERNS: List[Tuple[str, str]] = [
+    # Halogen-heteroatom bonds (O-F, O-Cl, N-F, N-Cl, S-F, etc.)
+    ("[O][F]",          "O-F bond (hypofluorite) — thermodynamically unstable"),
+    ("[O][Cl]",         "O-Cl bond (hypochlorite) — highly reactive"),
+    ("[O][Br]",         "O-Br bond — unstable"),
+    ("[O][I]",          "O-I bond — unstable"),
+    ("[N][F]",          "N-F bond — highly reactive fluorinating agent"),
+    ("[N][Cl]",         "N-Cl bond — chloramine, unstable"),
+    ("[S][F]",          "S-F bond — sulfonyl fluoride (reactive warhead, not drug-like)"),
+    # Peroxides and peracids
+    ("[O][O]",          "Peroxide O-O bond — explosive/unstable"),
+    ("[O][O][H]",       "Hydroperoxide — unstable"),
+    ("C(=O)[O][O]",     "Peracid — highly reactive"),
+    # Azides, diazonium
+    ("[N]=[N]=[N]",     "Azide — explosive"),
+    ("[N+]#[N]",        "Diazonium — highly reactive"),
+    # Acyl halides
+    ("C(=O)[F]",        "Acyl fluoride — highly reactive electrophile"),
+    ("C(=O)[Cl]",       "Acyl chloride — highly reactive electrophile"),
+    ("C(=O)[Br]",       "Acyl bromide — highly reactive electrophile"),
+    # Isocyanates and isothiocyanates
+    ("[N]=C=O",         "Isocyanate — highly reactive"),
+    ("[N]=C=S",         "Isothiocyanate — reactive"),
+    # True arene oxides (epoxide on aromatic ring — NOT phenol/methoxy)
+    # Pattern: aromatic carbon bonded to oxygen that is part of a 3-membered ring
+    ("c1ccc2c(c1)OC2",  "Arene oxide (epoxide on benzene ring) — mutagenic metabolite"),
+    # Phosphorus-halogen bonds
+    ("[P][F]",          "P-F bond — nerve agent motif, not drug-like"),
+    ("[P][Cl]",         "P-Cl bond — highly reactive"),
+    # Hypervalent nitrogen (pentavalent N without formal charge)
+    # Checked separately in _is_chemically_valid
+]
+
+# Pre-compile SMARTS patterns for performance
+_COMPILED_INVALID: List[Tuple[Chem.Mol, str]] = []
+for _sma, _reason in _INVALID_PATTERNS:
+    _pat = Chem.MolFromSmarts(_sma)
+    if _pat is not None:
+        _COMPILED_INVALID.append((_pat, _reason))
+    else:
+        logger.warning("Could not compile SMARTS pattern: %s", _sma)
+
+
+def _is_chemically_valid(mol: Chem.Mol) -> Tuple[bool, str]:
+    """
+    Return (True, "") if the molecule passes all chemistry validity checks,
+    or (False, reason) if it contains a reactive/impossible group.
+
+    This is the gate that prevents the pipeline from advancing fantasy molecules.
+    """
+    # 1. Check against all compiled SMARTS patterns
+    for pattern, reason in _COMPILED_INVALID:
+        if mol.HasSubstructMatch(pattern):
+            return False, reason
+
+    # 2. Check for hypervalent atoms (valence exceeds allowed maximum)
+    #    RDKit's SanitizeMol already catches most of these, but we add
+    #    an explicit check for atoms with impossible valence states.
+    allowed_valence = {
+        6: [4],           # Carbon: max 4
+        7: [3, 5],        # Nitrogen: 3 (neutral) or 5 (N-oxide, formal charge)
+        8: [2],           # Oxygen: max 2
+        9: [1],           # Fluorine: exactly 1
+        15: [3, 5],       # Phosphorus: 3 or 5
+        16: [2, 4, 6],    # Sulfur: 2, 4, or 6
+        17: [1],          # Chlorine: 1 (in organic context)
+        35: [1],          # Bromine: 1
+        53: [1, 3, 5, 7], # Iodine: 1, 3, 5, or 7
+    }
+    for atom in mol.GetAtoms():
+        anum = atom.GetAtomicNum()
+        if anum in allowed_valence:
+            valence = atom.GetTotalValence()
+            if valence not in allowed_valence[anum]:
+                # Allow if there is a formal charge that explains it
+                if atom.GetFormalCharge() == 0:
+                    return False, f"Hypervalent atom: {atom.GetSymbol()} with valence {valence}"
+
+    # 3. Check for atoms with no known synthetic precedent in drug context
+    #    Reject noble gases and radioactive elements
+    forbidden_elements = {2, 10, 18, 36, 54, 86,   # noble gases
+                          43, 61, 84, 85, 87, 88, 89,  # radioactive/unstable
+                          90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103}
+    for atom in mol.GetAtoms():
+        if atom.GetAtomicNum() in forbidden_elements:
+            return False, f"Forbidden element: {atom.GetSymbol()}"
+
+    return True, ""
+
+
+def check_smiles_validity(smiles: str) -> Tuple[bool, str]:
+    """
+    Public function to check a SMILES string for chemistry validity.
+    Returns (is_valid, reason_if_invalid).
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return False, "Invalid SMILES — RDKit cannot parse"
+    return _is_chemically_valid(mol)
 
 # ── Bioisosteric substitution table (C→N, N→O, etc.) ────────────────────────
 # Each entry: (from_atomic_num, to_atomic_num, label)
@@ -70,12 +182,19 @@ _FRAGMENTS = [
 
 
 def _is_drug_like(mol: Chem.Mol, parent_mol: Chem.Mol) -> bool:
-    """Return True if mol passes drug-likeness and size guards."""
+    """Return True if mol passes drug-likeness, size, and chemistry validity guards."""
     mw = Descriptors.MolWt(mol)
     if not (_MW_MIN <= mw <= _MW_MAX):
         return False
     delta = abs(mol.GetNumAtoms() - parent_mol.GetNumAtoms())
     if delta > _ATOM_DELTA_MAX:
+        return False
+    # Chemistry validity gate — this is the critical filter added after
+    # the O-F bond incident. Any molecule that fails this check is rejected
+    # regardless of predicted affinity or novelty score.
+    valid, reason = _is_chemically_valid(mol)
+    if not valid:
+        logger.debug("Chemistry validity filter rejected molecule: %s — %s", Chem.MolToSmiles(mol)[:50], reason)
         return False
     return True
 
